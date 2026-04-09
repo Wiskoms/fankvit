@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактор платіжних інструкцій</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            background-color: #2a2a2a;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Бічна панель інструментів */
+        #toolbar {
+            width: 300px;
+            background-color: #1e1e1e;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #333;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+
+        #toolbar h1 {
+            font-size: 18px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        #toolbar p.instructions {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        button {
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        button.btn-danger {
+            background-color: #dc3545;
+            margin-top: auto; /* Притискає кнопку до низу */
+        }
+
+        button.btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        button.btn-save {
+            background-color: #007bff;
+        }
+
+        button.btn-save:hover {
+            background-color: #0069d9;
+        }
+
+        /* Основна зона з полотном */
+        #canvas-container {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: auto;
+            background-color: #1a1a1a;
+        }
+
+        canvas {
+            border: 1px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+
+        /* Стилізація контекстних елементів керування */
+        .controls-group {
+            border-top: 1px solid #333;
+            padding-top: 15px;
+            margin-top: 15px;
+            display: none; /* Сховано за замовчуванням */
+        }
+
+        .controls-group label {
+            display: block;
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input[type="color"] {
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+
+        input[type="number"] {
+            width: 60px;
+            padding: 8px;
+            background-color: #333;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toolbar">
+        <h1>Редактор квитанцій</h1>
+        <p class="instructions">
+            Завантажте оригінальну квитанцію як файл 'receipt.png' у ту ж папку. <br><br>
+            Натисніть кнопку нижче, щоб додати поле. <br><br>
+            Двічі клацніть на доданому полі, щоб змінити текст. <br><br>
+            Перетягніть поле, щоб перекрити старий текст.
+        </p>
+        
+        <button onclick="addEditableField('Arial')">
+            <span>+</span> Додати поле (Arial)
+        </button>
+        <button onclick="addEditableField('Courier New')">
+            <span>+</span> Додати поле (Моноширинний)
+        </button>
+        
+        <div id="text-controls" class="controls-group">
+            <label>Налаштування виділеного тексту</label>
+            <div class="controls-row">
+                <input type="color" id="text-color" oninput="updateTextStyle()" value="#000000">
+                <input type="number" id="text-size" oninput="updateTextStyle()" value="12" min="6" max="72">
+            </div>
+            <p class="instructions">Використовуйте 'Arial' для більшості тексту. 'Courier New' підходить для деяких номерів рахунків.</p>
+        </div>
+
+        <button class="btn-save" onclick="downloadEditedImage()">
+            💾 Зберегти результат
+        </button>
+        
+        <button class="btn-danger" onclick="deleteSelectedObject()">
+            🗑️ Видалити виділене
+        </button>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="main-canvas"></canvas>
+    </div>
+
+    <script>
+        // Ініціалізація полотна Fabric.js
+        const canvas = new fabric.Canvas('main-canvas', {
+            // Дозволяє вибирати об'єкти
+            selection: true
+        });
+        
+        // Шлях до вашого скріншоту
+        const backgroundImagePath = 'receipt.png';
+
+        // Завантаження фонового зображення при завантаженні сторінки
+        window.onload = function() {
+            fabric.Image.fromURL(backgroundImagePath, function(img) {
+                // Масштабуємо полотно під розмір картинки
+                canvas.setWidth(img.width);
+                canvas.setHeight(img.height);
+                
+                // Встановлюємо зображення як фон, без можливості його редагування
+                canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
+                    scaleX: canvas.width / img.width,
+                    scaleY: canvas.height / img.height,
+                    selectable: false // Фон не можна вибрати
+                });
+                
+                // Оновлюємо відображення
+                canvas.renderAll();
+            }, { crossOrigin: 'anonymous' }); // Для GitHub Pages
+        };
+
+        // Функція для додавання нового текстового поля, яке перекриває старе
+        function addEditableField(fontFamily = 'Arial') {
+            const text = new fabric.IText('Новий Текст', {
+                left: 100, // Початкова позиція
+                top: 100,
+                fontFamily: fontFamily,
+                fontSize: 12, // Розмір, схожий на оригінал
+                fill: '#000000', // Чорний текст
+                
+                // Ключовий момент: додаємо білий фон, щоб перекрити старий текст
+                backgroundColor: '#ffffff',
+                
+                // Налаштування елементів керування
+                cornerColor: '#28a745',
+                cornerSize: 8,
+                transparentCorners: false,
+                borderColor: '#28a745',
+                hasRotatingPoint: false, // Приховуємо точку обертання для точності
+                
+                // Налаштування відступів для кращого перекриття
+                padding: 2
+            });
+            
+            canvas.add(text);
+            // Відразу робимо нове поле активним
+            canvas.setActiveObject(text);
+            canvas.renderAll();
+        }
+
+        // Видалення виділеного об'єкта
+        function deleteSelectedObject() {
+            const activeObject = canvas.getActiveObject();
+            if (activeObject && activeObject.type !== 'image') { // Не дозволяємо видаляти фон
+                canvas.remove(activeObject);
+                hideTextControls();
+            }
+        }
+
+        // Збереження фінального зображення
+        function downloadEditedImage() {
+            // Створюємо Data URL зображення
+            const dataURL = canvas.toDataURL({
+                format: 'png',
+                quality: 1.0,
+                multiplier: 1 // Зберігаємо оригінальну роздільну здатність
+            });
+            
+            // Створюємо тимчасове посилання для скачування
+            const link = document.createElement('a');
+            link.download = 'edited_receipt.png';
+            link.href = dataURL;
+            link.click();
+        }
+
+        // --- Логіка контекстних елементів керування ---
+        
+        const textControls = document.getElementById('text-controls');
+        const textColorInput = document.getElementById('text-color');
+        const textSizeInput = document.getElementById('text-size');
+
+        // Показуємо елементи керування, коли вибрано текст
+        canvas.on('selection:created', showTextControls);
+        canvas.on('selection:updated', showTextControls);
+        canvas.on('selection:cleared', hideTextControls);
+
+        function showTextControls(e) {
+            const activeObject = canvas.getActiveObject();
+            if (activeObject && activeObject.type === 'i-text') {
+                textControls.style.display = 'block';
+                // Оновлюємо значення інпутів відповідно до виділеного тексту
+                textColorInput.value = activeObject.fill;
+                textSizeInput.value = activeObject.fontSize;
+            } else {
+                hideTextControls();
+            }
+        }
+
+        function hideTextControls() {
+            textControls.style.display = 'none';
+        }
+
+        // Оновлюємо стиль тексту на основі значень інпутів
+        function updateTextStyle() {
+            const activeObject = canvas.getActiveObject();
+            if (activeObject && activeObject.type === 'i-text') {
+                activeObject.set({
+                    fill: textColorInput.value,
+                    fontSize: parseInt(textSizeInput.value, 10)
+                });
+                canvas.renderAll();
+            }
+        }
+
+        // Додаємо обробник клавіші Delete для швидкого видалення
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete') {
+                deleteSelectedObject();
+            }
+        });
+
+    </script>
+</body>
+</html>
