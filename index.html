@@ -3,142 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Receipt Editor Mobile</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <title>Bank Editor</title>
+    
     <style>
-        @font-face {
-            font-family: 'Manrope';
-            src: url('Manrope.ttf') format('truetype');
-            font-weight: normal;
-        }
-        @font-face {
-            font-family: 'Manrope';
-            src: url('Manrope-Bold.ttf') format('truetype');
-            font-weight: bold;
-        }
+        @font-face { font-family: 'Manrope'; src: url('Manrope.ttf'); }
+        @font-face { font-family: 'Manrope-Bold'; src: url('Manrope-Bold.ttf'); }
 
-        body { 
-            margin: 0; 
-            padding: 0; 
-            background-color: #000; 
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000; color: black; overflow: hidden;
             font-family: 'Manrope', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            height: 100vh;
-            overflow: hidden; /* Запобігає смиканню екрана */
         }
 
-        #canvas-wrapper {
+        #wrapper {
             width: 100vw;
             height: 100vh;
-            overflow: auto; /* Дозволяє скролити великий чек вниз */
+            overflow-y: auto;
             display: flex;
             justify-content: center;
             background-color: #1a1a1a;
             -webkit-overflow-scrolling: touch;
         }
 
-        canvas {
-            display: block;
-            outline: none;
-            -webkit-tap-highlight-color: transparent;
+        .receipt-container {
+            position: relative;
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            width: 100%;
         }
 
-        /* Прибираємо підсвітку при натисканні на телефоні */
+        .editable {
+            position: absolute;
+            border: none;
+            background: white; /* Затирає старий текст на фото */
+            outline: none;
+            white-space: nowrap;
+            display: inline-block;
+            min-width: 5px;
+            cursor: text;
+        }
+
+        .bold { font-family: 'Manrope-Bold', sans-serif; font-weight: bold; }
+
+        /* Приховуємо підсвітку на телефонах */
         * { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
 <body>
 
-    <div id="canvas-wrapper">
-        <canvas id="main-canvas"></canvas>
+    <div id="wrapper">
+        <div id="receipt" class="receipt-container" spellcheck="false">
+            </div>
     </div>
 
     <script>
-        const canvas = new fabric.Canvas('main-canvas', {
-            selection: false,
-            allowTouchScrolling: true,
-            containerClass: 'mobile-canvas'
-        });
-
-        // Твої координати (пиши їх сюди як для ОРИГІНАЛЬНОГО великого фото)
+        // Твоя форма редагування: left, top, font-size (s), color (c), bold (b)
         const fieldsConfig = [
-            { t: 'P24A5585215829D8130', x: 800, y: 175, s: 10, c: '#555', b: false },
-            { t: 'P24A5585215829D8130', x: 50, y: 240, s: 10, c: '#555', b: false },
-            { t: 'ЯЩУК РОМАН МИКОЛАЙОВИЧ', x: 50, y: 288, s: 13, c: '#000', b: true },
-            { t: '3962708533', x: 50, y: 320, s: 12, c: '#000', b: false },
-            { t: 'UA463052990262096400990356871', x: 50, y: 345, s: 11, c: '#000', b: false },
-            { t: 'АТ КБ ПРИВАТБАНК', x: 50, y: 370, s: 11, c: '#000', b: false },
-            { t: 'UA232441015262947', x: 520, y: 345, s: 11, c: '#000', b: false },
-            { t: 'PJSC BANK ALLIANCE', x: 520, y: 370, s: 11, c: '#000', b: false },
-            { t: 'Переказ власних коштів.', x: 50, y: 420, s: 12, c: '#000', b: false },
-            { t: '5,00', x: 685, y: 420, s: 12, c: '#000', b: false },
-            { t: '320,00', x: 920, y: 420, s: 13, c: '#000', b: true },
-            { t: 'триста двадцять грн. 00 коп.', x: 805, y: 445, s: 10, c: '#000', b: false },
-            { t: '2026/04/04 21:58   Ящук Роман Миколайович', x: 45, y: 735, s: 10, c: '#333', b: false },
-            { t: '04/04/2026 21:58', x: 865, y: 722, s: 10, c: '#333', b: false },
-            { t: '04/03/2026', x: 890, y: 748, s: 10, c: '#333', b: false }
+            { id: 'f1',  t: 'P24A5585215829D8130', left: 81.2, top: 19.5, s: 2.1, c: '#555', b: false },
+            { id: 'f2',  t: 'P24A5585215829D8130', left: 5.1,  top: 24.0, s: 2.1, c: '#555', b: false },
+            { id: 'f3',  t: 'ЯЩУК РОМАН МИКОЛАЙОВИЧ', left: 5.1,  top: 28.8, s: 2.7, c: '#000', b: true },
+            { id: 'f4',  t: '3962708533', left: 5.1,  top: 32.0, s: 2.5, c: '#000', b: false },
+            { id: 'f5',  t: 'UA463052990262096400990356871', left: 5.1, top: 34.5, s: 2.3, c: '#000', b: false },
+            { id: 'f6',  t: 'АТ КБ ПРИВАТБАНК', left: 5.1, top: 37.0, s: 2.3, c: '#000', b: false },
+            { id: 'f7',  t: 'UA232441015262947', left: 52.0, top: 34.5, s: 2.3, c: '#000', b: false },
+            { id: 'f8',  t: 'PJSC BANK ALLIANCE', left: 52.0, top: 37.0, s: 2.3, c: '#000', b: false },
+            { id: 'f9',  t: 'Переказ власних коштів.', left: 5.1, top: 42.0, s: 2.5, c: '#000', b: false },
+            { id: 'f10', t: '5,00', left: 68.5, top: 42.0, s: 2.5, c: '#000', b: false },
+            { id: 'f11', t: '320,00', left: 92.2, top: 42.0, s: 2.7, c: '#000', b: true, rightAlign: true },
+            { id: 'f12', t: 'триста двадцять грн. 00 коп.', left: 80.5, top: 44.5, s: 2.0, c: '#000', b: false },
+            { id: 'f13', t: '2026/04/04 21:58   Ящук Роман Миколайович', left: 4.6, top: 73.5, s: 2.0, c: '#333', b: false },
+            { id: 'f14', t: '04/04/2026 21:58', left: 87.2, top: 72.2, s: 2.0, c: '#333', b: false },
+            { id: 'f15', t: '04/03/2026', left: 89.5, top: 74.8, s: 2.0, c: '#333', b: false }
         ];
 
-        fabric.Image.fromURL('receipt.jpg', function(img) {
-            // РОЗРАХУНОК МАСШТАБУ ПІД ТЕЛЕФОН
-            const screenWidth = window.innerWidth;
-            const scale = screenWidth / img.width;
+        const container = document.getElementById('receipt');
 
-            canvas.setWidth(img.width * scale);
-            canvas.setHeight(img.height * scale);
-            
-            canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
-                scaleX: scale,
-                scaleY: scale
-            });
-            
+        function init() {
+            const img = new Image();
+            img.src = 'receipt.jpg';
+            img.onload = function() {
+                const ratio = img.height / img.width;
+                container.style.height = (window.innerWidth * ratio) + 'px';
+                container.style.backgroundImage = "url('receipt.jpg')";
+                loadData();
+            };
+        }
+
+        function renderFields() {
             fieldsConfig.forEach(conf => {
-                const iText = new fabric.IText(conf.t, {
-                    left: conf.x * scale,   // Масштабуємо позицію X
-                    top: conf.y * scale,    // Масштабуємо позицію Y
-                    fontSize: conf.s * scale, // Масштабуємо розмір тексту
-                    fill: conf.c,
-                    fontFamily: 'Manrope',
-                    fontWeight: conf.b ? 'bold' : 'normal',
-                    backgroundColor: '#fff',
-                    
-                    // Фіксуємо поле
-                    lockMovementX: true,
-                    lockMovementY: true,
-                    lockScalingX: true,
-                    lockScalingY: true,
-                    lockRotation: true,
-                    
-                    hasControls: false,
-                    hasBorders: false,
-                    editingBorderColor: 'transparent',
-                    cursorColor: '#28a745'
-                });
-
-                canvas.add(iText);
-            });
-        });
-
-        // Збереження (Подвійний клік на фоні)
-        canvas.on('mouse:dblclick', function(opt) {
-            if (!opt.target) {
-                const link = document.createElement('a');
-                link.download = 'edited_receipt.png';
-                // Використовуємо multiplier: 1/scale, щоб скачати в оригінальній якості (велике фото)
-                const originalWidth = canvas.backgroundImage.width;
-                const multiplier = originalWidth / canvas.width;
+                const el = document.createElement('div');
+                el.id = conf.id;
+                el.className = 'editable' + (conf.b ? ' bold' : '');
+                el.contentEditable = "true";
                 
-                link.href = canvas.toDataURL({ 
-                    format: 'png', 
-                    multiplier: multiplier 
-                });
-                link.click();
-            }
-        });
+                // Ті самі стилі: left, top, font-size, color
+                el.style.top = conf.top + '%';
+                
+                if (conf.rightAlign) {
+                    el.style.right = (100 - conf.left) + '%';
+                    el.style.textAlign = 'right';
+                } else {
+                    el.style.left = conf.left + '%';
+                }
 
-        // Запобігаємо виклику меню при довгому тапі
+                el.style.fontSize = conf.s + 'vw';
+                el.style.color = conf.c;
+                el.innerText = conf.t;
+
+                el.addEventListener('input', saveData);
+                container.appendChild(el);
+            });
+        }
+
+        function saveData() {
+            const data = {};
+            document.querySelectorAll('.editable').forEach(el => {
+                data[el.id] = el.innerText;
+            });
+            localStorage.setItem('receipt_save_data', JSON.stringify(data));
+        }
+
+        function loadData() {
+            renderFields();
+            const saved = localStorage.getItem('receipt_save_data');
+            if (saved) {
+                const data = JSON.parse(saved);
+                for (let id in data) {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = data[id];
+                }
+            }
+        }
+
+        window.addEventListener('load', init);
+        // Блокуємо контекстне меню
         window.oncontextmenu = (e) => { e.preventDefault(); return false; };
     </script>
 </body>
