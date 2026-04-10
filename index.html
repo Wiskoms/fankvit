@@ -2,15 +2,38 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes">
     <title>Receipt Editor</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
-        body { margin: 0; padding: 0; background-color: #000; overflow: hidden; font-family: 'Roboto', sans-serif; }
-        #canvas-container { display: flex; justify-content: center; align-items: center; height: 100vh; }
-        
-        /* Поле введення тексту знизу */
+        /* Підключення твоїх шрифтів */
+        @font-face {
+            font-family: 'ManropeCustom';
+            src: url('Manrope.ttf') format('truetype');
+            font-weight: normal;
+        }
+        @font-face {
+            font-family: 'ManropeCustom';
+            src: url('Manrope-Bold.ttf') format('truetype');
+            font-weight: bold;
+        }
+
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background-color: #1a1a1a; 
+            font-family: 'ManropeCustom', sans-serif;
+        }
+
+        /* Контейнер тепер дозволяє скрол, якщо скріншот великий */
+        #canvas-wrapper {
+            width: 100vw;
+            height: 100vh;
+            overflow: auto; /* Дозволяє гортати картинку */
+            display: block;
+            -webkit-overflow-scrolling: touch;
+        }
+
         #edit-panel {
             display: none;
             position: fixed;
@@ -20,9 +43,10 @@
             background: white;
             padding: 20px;
             border-radius: 20px 20px 0 0;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
             z-index: 1000;
         }
+
         input {
             width: 100%;
             padding: 15px;
@@ -30,8 +54,9 @@
             border-radius: 10px;
             font-size: 16px;
             box-sizing: border-box;
-            outline: none;
+            font-family: 'ManropeCustom', sans-serif;
         }
+
         .btn-done {
             margin-top: 10px;
             width: 100%;
@@ -46,100 +71,91 @@
 </head>
 <body>
 
-    <div id="canvas-container">
+    <div id="canvas-wrapper">
         <canvas id="main-canvas"></canvas>
     </div>
 
     <div id="edit-panel">
-        <input type="text" id="text-input" placeholder="Введіть текст...">
-        <button class="btn-done" onclick="closeEditor()">Готово</button>
+        <input type="text" id="text-input">
+        <button class="btn-done" onclick="closeEditor()">Зберегти зміни</button>
     </div>
 
     <script>
-        const canvas = new fabric.Canvas('main-canvas', { selection: false });
+        const canvas = new fabric.Canvas('main-canvas', {
+            selection: false,
+            allowTouchScrolling: true // Дозволяє скролити екран пальцем поверх канвасу
+        });
+        
         const editPanel = document.getElementById('edit-panel');
         const textInput = document.getElementById('text-input');
         let activeObj = null;
 
-        // --- НАЛАШТУВАННЯ ПОЛІВ (Змінюй тут розмір, колір та позицію) ---
+        // --- НАЛАШТУВАННЯ (Тут міняй координати, розмір та колір) ---
         const fieldsConfig = [
-            { text: 'P24A5585215829D8130', x: 800, y: 175, size: 10, color: '#555' },
-            { text: 'P24A5585215829D8130', x: 50, y: 240, size: 10, color: '#555' },
-            { text: 'ЯЩУК РОМАН МИКОЛАЙОВИЧ', x: 50, y: 288, size: 13, color: '#000' },
-            { text: '3962708533', x: 50, y: 320, size: 12, color: '#000' },
-            { text: 'UA463052990262096400990356871', x: 50, y: 345, size: 11, color: '#000' },
-            { text: 'АТ КБ ПРИВАТБАНК', x: 50, y: 370, size: 11, color: '#000' },
-            { text: 'UA232441015262947', x: 520, y: 345, size: 11, color: '#000' },
-            { text: 'PJSC BANK ALLIANCE', x: 520, y: 370, size: 11, color: '#000' },
-            { text: 'Переказ власних коштів.', x: 50, y: 420, size: 12, color: '#000' },
-            { text: '5,00', x: 685, y: 420, size: 12, color: '#000' },
-            { text: '320,00', x: 920, y: 420, size: 13, color: '#000' },
-            { text: 'триста двадцять грн. 00 коп.', x: 805, y: 445, size: 10, color: '#000' },
-            { text: '2026/04/04 21:58   Ящук Роман Миколайович', x: 45, y: 735, size: 10, color: '#333' },
-            { text: '04/04/2026 21:58', x: 865, y: 722, size: 10, color: '#333' },
-            { text: '04/04/2026 21:58', x: 865, y: 735, size: 10, color: '#333' },
-            { text: '04/03/2026', x: 890, y: 748, size: 10, color: '#333' }
+            { text: 'P24A5585215829D8130', x: 800, y: 175, size: 10, color: '#555', bold: false },
+            { text: 'P24A5585215829D8130', x: 50, y: 240, size: 10, color: '#555', bold: false },
+            { text: 'ЯЩУК РОМАН МИКОЛАЙОВИЧ', x: 50, y: 288, size: 13, color: '#000', bold: true },
+            { text: '3962708533', x: 50, y: 320, size: 12, color: '#000', bold: false },
+            { text: 'UA463052990262096400990356871', x: 50, y: 345, size: 11, color: '#000', bold: false },
+            { text: 'АТ КБ ПРИВАТБАНК', x: 50, y: 370, size: 11, color: '#000', bold: false },
+            { text: 'UA232441015262947', x: 520, y: 345, size: 11, color: '#000', bold: false },
+            { text: 'PJSC BANK ALLIANCE', x: 520, y: 370, size: 11, color: '#000', bold: false },
+            { text: 'Переказ власних коштів.', x: 50, y: 420, size: 12, color: '#000', bold: false },
+            { text: '5,00', x: 685, y: 420, size: 12, color: '#000', bold: false },
+            { text: '320,00', x: 920, y: 420, size: 13, color: '#000', bold: true },
+            { text: 'триста двадцять грн. 00 коп.', x: 805, y: 445, size: 10, color: '#000', bold: false },
+            { text: '2026/04/04 21:58   Ящук Роман Миколайович', x: 45, y: 735, size: 10, color: '#333', bold: false },
+            { text: '04/04/2026 21:58', x: 865, y: 722, size: 10, color: '#333', bold: false },
+            { text: '04/03/2026', x: 890, y: 748, size: 10, color: '#333', bold: false }
         ];
 
-        // Завантаження фону
         fabric.Image.fromURL('receipt.jpg', function(img) {
             canvas.setWidth(img.width);
             canvas.setHeight(img.height);
             canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
             
-            // Додаємо поля
             fieldsConfig.forEach(conf => {
                 const t = new fabric.Text(conf.text, {
                     left: conf.x,
                     top: conf.y,
                     fontSize: conf.size,
                     fill: conf.color,
-                    fontFamily: 'Roboto',
+                    fontFamily: 'ManropeCustom',
+                    fontWeight: conf.bold ? 'bold' : 'normal',
                     backgroundColor: '#fff',
-                    selectable: true,
-                    hasControls: false, // Забороняємо змінювати розмір пальцями
+                    selectable: false, // НЕ МОЖНА перетягувати
+                    evented: true,      // МОЖНА клікати
+                    hasControls: false,
                     hasBorders: false
                 });
                 canvas.add(t);
             });
         });
 
-        // Відкриття редактора при натисканні на текст
-        canvas.on('selection:created', (e) => openEditor(e.target));
-        canvas.on('mousedown', (e) => {
-            if (e.target && e.target.type === 'text') openEditor(e.target);
+        // Клік для редагування
+        canvas.on('mouse:down', function(e) {
+            if (e.target && e.target.type === 'text') {
+                activeObj = e.target;
+                textInput.value = activeObj.text;
+                editPanel.style.display = 'block';
+                textInput.focus();
+            }
         });
-
-        function openEditor(obj) {
-            activeObj = obj;
-            textInput.value = obj.text;
-            editPanel.style.display = 'block';
-            textInput.focus();
-        }
 
         function closeEditor() {
             if (activeObj) {
                 activeObj.set('text', textInput.value);
-                canvas.discardActiveObject();
                 canvas.renderAll();
             }
             editPanel.style.display = 'none';
         }
 
-        // Оновлення тексту в реальному часі
-        textInput.oninput = function() {
-            if (activeObj) {
-                activeObj.set('text', this.value);
-                canvas.renderAll();
-            }
-        };
-
-        // Подвійний клік на порожньому місці — скачати результат
+        // Подвійний клік на фоні — завантажити фото
         canvas.on('mouse:dblclick', function(opt) {
             if (!opt.target) {
                 const link = document.createElement('a');
-                link.download = 'kvit_ready.png';
-                link.href = canvas.toDataURL({ format: 'png' });
+                link.download = 'edited_receipt.png';
+                link.href = canvas.toDataURL({ format: 'png', multiplier: 2 });
                 link.click();
             }
         });
