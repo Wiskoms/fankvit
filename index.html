@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes">
-    <title>Receipt Editor</title>
+    <title>Receipt Editor Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
-        /* Підключення твоїх шрифтів */
         @font-face {
-            font-family: 'ManropeCustom';
+            font-family: 'Manrope';
             src: url('Manrope.ttf') format('truetype');
             font-weight: normal;
         }
         @font-face {
-            font-family: 'ManropeCustom';
+            font-family: 'Manrope';
             src: url('Manrope-Bold.ttf') format('truetype');
             font-weight: bold;
         }
@@ -21,51 +20,28 @@
         body { 
             margin: 0; 
             padding: 0; 
-            background-color: #1a1a1a; 
-            font-family: 'ManropeCustom', sans-serif;
+            background-color: #121212; 
+            font-family: 'Manrope', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
 
-        /* Контейнер тепер дозволяє скрол, якщо скріншот великий */
         #canvas-wrapper {
-            width: 100vw;
-            height: 100vh;
-            overflow: auto; /* Дозволяє гортати картинку */
-            display: block;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            display: flex;
+            justify-content: center; /* Центрування по горизонталі */
+            align-items: flex-start; /* Дозволяє скролити вниз */
             -webkit-overflow-scrolling: touch;
         }
 
-        #edit-panel {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            padding: 20px;
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-            z-index: 1000;
-        }
-
-        input {
-            width: 100%;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            font-size: 16px;
-            box-sizing: border-box;
-            font-family: 'ManropeCustom', sans-serif;
-        }
-
-        .btn-done {
-            margin-top: 10px;
-            width: 100%;
-            padding: 12px;
-            background: #28a745;
-            color: white;
+        /* Приховуємо стандартні рамки виділення Fabric.js */
+        canvas {
             border: none;
-            border-radius: 10px;
-            font-weight: bold;
+            outline: none;
         }
     </style>
 </head>
@@ -75,38 +51,29 @@
         <canvas id="main-canvas"></canvas>
     </div>
 
-    <div id="edit-panel">
-        <input type="text" id="text-input">
-        <button class="btn-done" onclick="closeEditor()">Зберегти зміни</button>
-    </div>
-
     <script>
         const canvas = new fabric.Canvas('main-canvas', {
             selection: false,
-            allowTouchScrolling: true // Дозволяє скролити екран пальцем поверх канвасу
+            allowTouchScrolling: true
         });
-        
-        const editPanel = document.getElementById('edit-panel');
-        const textInput = document.getElementById('text-input');
-        let activeObj = null;
 
-        // --- НАЛАШТУВАННЯ (Тут міняй координати, розмір та колір) ---
-        const fieldsConfig = [
-            { text: 'P24A5585215829D8130', x: 800, y: 175, size: 10, color: '#555', bold: false },
-            { text: 'P24A5585215829D8130', x: 50, y: 240, size: 10, color: '#555', bold: false },
-            { text: 'ЯЩУК РОМАН МИКОЛАЙОВИЧ', x: 50, y: 288, size: 13, color: '#000', bold: true },
-            { text: '3962708533', x: 50, y: 320, size: 12, color: '#000', bold: false },
-            { text: 'UA463052990262096400990356871', x: 50, y: 345, size: 11, color: '#000', bold: false },
-            { text: 'АТ КБ ПРИВАТБАНК', x: 50, y: 370, size: 11, color: '#000', bold: false },
-            { text: 'UA232441015262947', x: 520, y: 345, size: 11, color: '#000', bold: false },
-            { text: 'PJSC BANK ALLIANCE', x: 520, y: 370, size: 11, color: '#000', bold: false },
-            { text: 'Переказ власних коштів.', x: 50, y: 420, size: 12, color: '#000', bold: false },
-            { text: '5,00', x: 685, y: 420, size: 12, color: '#000', bold: false },
-            { text: '320,00', x: 920, y: 420, size: 13, color: '#000', bold: true },
-            { text: 'триста двадцять грн. 00 коп.', x: 805, y: 445, size: 10, color: '#000', bold: false },
-            { text: '2026/04/04 21:58   Ящук Роман Миколайович', x: 45, y: 735, size: 10, color: '#333', bold: false },
-            { text: '04/04/2026 21:58', x: 865, y: 722, size: 10, color: '#333', bold: false },
-            { text: '04/03/2026', x: 890, y: 748, size: 10, color: '#333', bold: false }
+        // Налаштування полів (координати, розмір, жирність)
+        const fields = [
+            { t: 'P24A5585215829D8130', x: 800, y: 175, s: 10, c: '#555', b: false },
+            { t: 'P24A5585215829D8130', x: 50, y: 240, s: 10, c: '#555', b: false },
+            { t: 'ЯЩУК РОМАН МИКОЛАЙОВИЧ', x: 50, y: 288, s: 13, c: '#000', b: true },
+            { t: '3962708533', x: 50, y: 320, s: 12, c: '#000', b: false },
+            { t: 'UA463052990262096400990356871', x: 50, y: 345, s: 11, c: '#000', b: false },
+            { t: 'АТ КБ ПРИВАТБАНК', x: 50, y: 370, s: 11, c: '#000', b: false },
+            { t: 'UA232441015262947', x: 520, y: 345, s: 11, c: '#000', b: false },
+            { t: 'PJSC BANK ALLIANCE', x: 520, y: 370, s: 11, c: '#000', b: false },
+            { t: 'Переказ власних коштів.', x: 50, y: 420, s: 12, c: '#000', b: false },
+            { t: '5,00', x: 685, y: 420, s: 12, c: '#000', b: false },
+            { t: '320,00', x: 920, y: 420, s: 13, c: '#000', b: true },
+            { t: 'триста двадцять грн. 00 коп.', x: 805, y: 445, s: 10, c: '#000', b: false },
+            { t: '2026/04/04 21:58   Ящук Роман Миколайович', x: 45, y: 735, s: 10, c: '#333', b: false },
+            { t: '04/04/2026 21:58', x: 865, y: 722, s: 10, c: '#333', b: false },
+            { t: '04/03/2026', x: 890, y: 748, s: 10, c: '#333', b: false }
         ];
 
         fabric.Image.fromURL('receipt.jpg', function(img) {
@@ -114,51 +81,52 @@
             canvas.setHeight(img.height);
             canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
             
-            fieldsConfig.forEach(conf => {
-                const t = new fabric.Text(conf.text, {
+            fields.forEach(conf => {
+                const iText = new fabric.IText(conf.t, {
                     left: conf.x,
                     top: conf.y,
-                    fontSize: conf.size,
-                    fill: conf.color,
-                    fontFamily: 'ManropeCustom',
-                    fontWeight: conf.bold ? 'bold' : 'normal',
+                    fontSize: conf.s,
+                    fill: conf.c,
+                    fontFamily: 'Manrope',
+                    fontWeight: conf.b ? 'bold' : 'normal',
                     backgroundColor: '#fff',
-                    selectable: false, // НЕ МОЖНА перетягувати
-                    evented: true,      // МОЖНА клікати
+                    
+                    // Блокування рухів
+                    lockMovementX: true,
+                    lockMovementY: true,
+                    lockScalingX: true,
+                    lockScalingY: true,
+                    lockRotation: true,
+                    
+                    // Налаштування курсору
+                    cursorColor: '#28a745',
+                    selectionBackgroundColor: 'rgba(40, 167, 69, 0.2)',
+                    
                     hasControls: false,
-                    hasBorders: false
+                    hasBorders: false,
+                    editingBorderColor: 'transparent'
                 });
-                canvas.add(t);
+
+                canvas.add(iText);
             });
         });
 
-        // Клік для редагування
-        canvas.on('mouse:down', function(e) {
-            if (e.target && e.target.type === 'text') {
-                activeObj = e.target;
-                textInput.value = activeObj.text;
-                editPanel.style.display = 'block';
-                textInput.focus();
-            }
-        });
-
-        function closeEditor() {
-            if (activeObj) {
-                activeObj.set('text', textInput.value);
-                canvas.renderAll();
-            }
-            editPanel.style.display = 'none';
-        }
-
-        // Подвійний клік на фоні — завантажити фото
+        // Скачування при подвійному кліку на пустому фоні
         canvas.on('mouse:dblclick', function(opt) {
             if (!opt.target) {
                 const link = document.createElement('a');
-                link.download = 'edited_receipt.png';
+                link.download = 'result.png';
                 link.href = canvas.toDataURL({ format: 'png', multiplier: 2 });
                 link.click();
             }
         });
+
+        // Вимикаємо стандартне меню браузера при довгому натисканні на телефоні
+        window.oncontextmenu = function(event) {
+             event.preventDefault();
+             event.stopPropagation();
+             return false;
+        };
     </script>
 </body>
 </html>
