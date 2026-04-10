@@ -3,382 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Мобільний редактор квитанцій</title>
+    <title>Editor</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 0;
+            background-color: #000;
             display: flex;
             flex-direction: column;
-            background-color: #f4f4f4;
             height: 100vh;
             overflow: hidden;
-            color: #333;
         }
-
-        /* Зона полотна (скарншота) */
         #canvas-container {
             flex-grow: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: auto; /* Дозволяє скролити, якщо картинка велика */
-            background-color: #ddd;
-            padding: 10px;
+            background-color: #1a1a1a;
         }
-
-        canvas {
-            border: 1px solid #ccc;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        /* Панель керування знизу (фіксована) */
-        #controls-panel {
-            background-color: #fff;
+        /* Панель налаштувань з'являється тільки при виборі тексту */
+        #mini-tools {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
             padding: 15px;
-            border-top: 1px solid #eee;
-            box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 100;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 1000;
+            width: 90%;
+            max-width: 400px;
         }
-
-        #panel-header {
+        .tool-row {
             display: flex;
-            justify-content: space-between;
+            gap: 10px;
             align-items: center;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
-
-        #panel-header h2 {
-            font-size: 16px;
-            margin: 0;
-        }
-
-        .main-btns {
-            display: flex;
-            gap: 10px;
-        }
-
-        button {
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: opacity 0.2s;
-        }
-
-        button:active {
-            opacity: 0.7;
-        }
-
-        .btn-add { background-color: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
-        .btn-save { background-color: #007AFF; color: white; }
-        .btn-danger { background-color: #FF3B30; color: white; }
-        .btn-settings { background-color: #f0f0f0; color: #333; }
-
-        /* Контекстна панель налаштувань для вибраного поля */
-        #field-settings {
-            display: none; /* Сховано за замовчуванням */
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #eee;
-        }
-
-        .settings-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-
-        .settings-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .settings-item label {
-            font-size: 11px;
-            color: #777;
-            margin-bottom: 3px;
-        }
-
-        input[type="text"], input[type="number"] {
+        input {
             padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 13px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
         }
-
-        input[type="color"] {
-            border: none;
+        label { font-size: 12px; color: #666; font-family: sans-serif; }
+        .save-hint {
+            position: fixed;
+            top: 10px;
             width: 100%;
-            height: 35px;
-            border-radius: 6px;
-            cursor: pointer;
-            padding: 0;
-            background: none;
+            text-align: center;
+            color: rgba(255,255,255,0.3);
+            font-size: 10px;
+            font-family: sans-serif;
+            pointer-events: none;
         }
-
-        /* Завантажувач зображень (прихований) */
-        #imageLoader { display: none; }
     </style>
 </head>
 <body>
+
+    <div class="save-hint">Подвійний клік на фоні, щоб зберегти результат</div>
 
     <div id="canvas-container">
         <canvas id="main-canvas"></canvas>
     </div>
 
-    <div id="controls-panel">
-        <div id="panel-header">
-            <h2>Редактор Квитанції</h2>
-            <div class="main-btns">
-                <button class="btn-add" onclick="addNewField()">+ Поле</button>
-                <button class="btn-save" onclick="downloadImage()">💾 Скачати</button>
-            </div>
+    <div id="mini-tools">
+        <div class="tool-row">
+            <input type="text" id="t-text" style="flex-grow: 1;" placeholder="Текст">
         </div>
-        
-        <input type="file" id="imageLoader" accept="image/*">
-        <button id="manual-load-btn" style="display:none; background:#ff9500; color:white;" onclick="document.getElementById('imageLoader').click()">⚠️ Завантажити скріншот вручну</button>
-
-        <div id="field-settings">
-            <div class="settings-row">
-                <div class="settings-item" style="grid-column: span 2;">
-                    <label>Текст</label>
-                    <input type="text" id="set-text" oninput="updateActiveField('text')">
-                </div>
+        <div class="tool-row">
+            <div style="display:flex; flex-direction:column; flex:1;">
+                <label>Розмір</label>
+                <input type="number" id="t-size">
             </div>
-            <div class="settings-row">
-                <div class="settings-item">
-                    <label>Розмір</label>
-                    <input type="number" id="set-size" oninput="updateActiveField('size')" value="12" min="6" max="72">
-                </div>
-                <div class="settings-item">
-                    <label>Колір</label>
-                    <input type="color" id="set-color" oninput="updateActiveField('color')" value="#000000">
-                </div>
+            <div style="display:flex; flex-direction:column; width: 60px;">
+                <label>Колір</label>
+                <input type="color" id="t-color" style="height: 38px; width: 100%; padding: 0;">
             </div>
-            <div class="settings-row">
-                <div class="settings-item">
-                    <label>Позиція X</label>
-                    <input type="number" id="set-x" oninput="updateActiveField('x')">
-                </div>
-                <div class="settings-item">
-                    <label>Позиція Y</label>
-                    <input type="number" id="set-y" oninput="updateActiveField('y')">
-                </div>
-            </div>
-            <button class="btn-danger" style="width: 100%; margin-top: 10px;" onclick="deleteActiveField()">Видалити це поле</button>
+            <button onclick="canvas.discardActiveObject(); canvas.renderAll();" style="border:none; background:#007AFF; color:white; border-radius:8px; padding:0 15px;">OK</button>
         </div>
     </div>
 
     <script>
-        // Ініціалізація полотна
-        const canvas = new fabric.Canvas('main-canvas', {
-            selection: true
+        const canvas = new fabric.Canvas('main-canvas');
+        const tools = document.getElementById('mini-tools');
+        
+        // Шлях до твого файлу в GitHub
+        const bgImage = 'receipt.jpg';
+
+        fabric.Image.fromURL(bgImage, function(img) {
+            canvas.setWidth(img.width);
+            canvas.setHeight(img.height);
+            canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
+            
+            // Створюємо поля на тих самих місцях
+            addFields();
         });
-        
-        const backgroundImagePath = 'receipt.png';
-        
-        // --- Автозавантаження фонового зображення ---
-        window.onload = function() {
-            fabric.Image.fromURL(backgroundImagePath, function(img) {
-                // Масштабуємо полотно під розмір картинки
-                canvas.setWidth(img.width);
-                canvas.setHeight(img.height);
-                
-                // Встановлюємо фон
-                canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
-                    scaleX: canvas.width / img.width,
-                    scaleY: canvas.height / img.height,
-                    selectable: false
+
+        function addFields() {
+            const f = [
+                { t: 'P24A5585215829D8130', x: 800, y: 175, s: 10 },
+                { t: 'P24A5585215829D8130', x: 50, y: 240, s: 10 },
+                { t: 'ЯЩУК РОМАН МИКОЛАЙОВИЧ', x: 50, y: 288, s: 11 },
+                { t: '3962708533', x: 50, y: 320, s: 11 },
+                { t: 'UA463052990262096400990356871', x: 50, y: 345, s: 11 },
+                { t: 'АТ КБ ПРИВАТБАНК', x: 50, y: 370, s: 11 },
+                { t: '-', x: 520, y: 288, s: 11 },
+                { t: 'UA232441015262947', x: 520, y: 345, s: 11 },
+                { t: 'PJSC BANK ALLIANCE', x: 520, y: 370, s: 11 },
+                { t: 'Переказ власних коштів.', x: 50, y: 420, s: 11 },
+                { t: '5,00', x: 680, y: 420, s: 11 },
+                { t: '320,00', x: 915, y: 420, s: 12 },
+                { t: 'триста двадцять грн. 00 коп.', x: 800, y: 445, s: 10 },
+                { t: '2026/04/04 21:58   Ящук Роман Миколайович', x: 45, y: 735, s: 10 },
+                { t: '04/04/2026 21:58', x: 865, y: 722, s: 10 },
+                { t: '04/03/2026', x: 890, y: 748, s: 10 }
+            ];
+
+            f.forEach(conf => {
+                const text = new fabric.IText(conf.t, {
+                    left: conf.x,
+                    top: conf.y,
+                    fontSize: conf.s,
+                    fontFamily: 'Arial',
+                    fill: '#000',
+                    backgroundColor: '#fff',
+                    hasRotatingPoint: false,
+                    transparentCorners: true,
+                    cornerSize: 7
                 });
-                
-                // --- Ініціалізація заздалегідь визначених полів ---
-                createInitialFields();
-                
-            }, { 
-                crossOrigin: 'anonymous',
-                // Обробка помилки завантаження
-                onerror: function() {
-                    console.error("Не вдалося завантажити receipt.png. Переконайтеся, що файл лежить у тій же папці.");
-                    document.getElementById('manual-load-btn').style.display = 'block';
-                }
+                canvas.add(text);
             });
+        }
+
+        // Логіка панелі налаштувань
+        canvas.on('selection:created', updatePanel);
+        canvas.on('selection:updated', updatePanel);
+        canvas.on('selection:cleared', () => tools.style.display = 'none');
+
+        function updatePanel() {
+            const obj = canvas.getActiveObject();
+            if (obj && obj.type === 'i-text') {
+                tools.style.display = 'block';
+                document.getElementById('t-text').value = obj.text;
+                document.getElementById('t-size').value = obj.fontSize;
+                document.getElementById('t-color').value = obj.fill;
+            }
+        }
+
+        // Зв'язок інпутів з текстом
+        document.getElementById('t-text').oninput = function() {
+            const obj = canvas.getActiveObject();
+            if(obj) { obj.set('text', this.value); canvas.renderAll(); }
+        };
+        document.getElementById('t-size').oninput = function() {
+            const obj = canvas.getActiveObject();
+            if(obj) { obj.set('fontSize', parseInt(this.value)); canvas.renderAll(); }
+        };
+        document.getElementById('t-color').oninput = function() {
+            const obj = canvas.getActiveObject();
+            if(obj) { obj.set('fill', this.value); canvas.renderAll(); }
         };
 
-        // --- Ручне завантаження (на всяк випадок) ---
-        document.getElementById('imageLoader').onchange = function (e) {
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                const imgObj = new Image();
-                imgObj.src = event.target.result;
-                imgObj.onload = function () {
-                    const image = new fabric.Image(imgObj);
-                    canvas.setWidth(image.width);
-                    canvas.setHeight(image.height);
-                    canvas.setBackgroundImage(image, canvas.renderAll.bind(canvas));
-                    document.getElementById('manual-load-btn').style.display = 'none';
-                    // Перестворюємо поля після ручного завантаження
-                    canvas.remove(...canvas.getObjects('i-text'));
-                    createInitialFields();
-                }
+        // Збереження при подвійному кліку на фоні
+        canvas.on('mouse:dblclick', function(options) {
+            if (!options.target) {
+                const dataURL = canvas.toDataURL({ format: 'png', quality: 1 });
+                const link = document.createElement('a');
+                link.download = 'ready_kvit.png';
+                link.href = dataURL;
+                link.click();
             }
-            reader.readAsDataURL(e.target.files[0]);
-        };
-
-        // --- Створення початкових полів на основі ваших червоних кіл ---
-        // Приблизні координати. Їх можна буде налаштувати через панель.
-        const initialFieldsConfig = [
-            { id: 'doc_code_top', text: 'P24A5585215829D8130', x: 800, y: 175, size: 10, font: 'Arial' },
-            { id: 'doc_code_main', text: 'P24A5585215829D8130', x: 50, y: 240, size: 10, font: 'Arial' },
-            
-            // Платник
-            { id: 'payer_name', text: 'ЯЩУК РОМАН МИКОЛАЙОВИЧ', x: 50, y: 288, size: 11, font: 'Arial' },
-            { id: 'payer_code', text: '3962708533', x: 50, y: 320, size: 11, font: 'Arial' },
-            { id: 'payer_account', text: 'UA463052990262096400990356871', x: 50, y: 345, size: 11, font: 'Arial' },
-            { id: 'payer_bank', text: 'АТ КБ ПРИВАТБАНК', x: 50, y: 370, size: 11, font: 'Arial' },
-            
-            // Отримувач
-            { id: 'recip_name', text: '-', x: 520, y: 288, size: 11, font: 'Arial' },
-            { id: 'recip_code', text: '-', x: 520, y: 320, size: 11, font: 'Arial' },
-            { id: 'recip_account', text: 'UA232441015262947', x: 520, y: 345, size: 11, font: 'Arial' },
-            { id: 'recip_bank', text: 'PJSC BANK ALLIANCE', x: 520, y: 370, size: 11, font: 'Arial' },
-            
-            // Платіж
-            { id: 'payment_purpose', text: 'Переказ власних коштів.', x: 50, y: 420, size: 11, font: 'Arial' },
-            { id: 'commission_amount', text: '5,00', x: 680, y: 420, size: 11, font: 'Arial' },
-            { id: 'total_amount_num', text: '320,00', x: 915, y: 420, size: 12, font: 'Arial' },
-            { id: 'total_amount_words', text: 'триста двадцять грн. 00 коп.', x: 800, y: 445, size: 10, font: 'Arial' },
-            
-            // Підписи та дати
-            { id: 'sign_date_name', text: '2026/04/04 21:58   Ящук Роман Миколайович', x: 45, y: 735, size: 10, font: 'Arial' },
-            { id: 'create_date', text: '04/04/2026 21:58', x: 865, y: 722, size: 10, font: 'Arial' },
-            { id: 'exec_date', text: '04/04/2026 21:58', x: 865, y: 735, size: 10, font: 'Arial' },
-            { id: 'value_date', text: '04/03/2026', x: 890, y: 748, size: 10, font: 'Arial' }
-        ];
-
-        function createInitialFields() {
-            initialFieldsConfig.forEach(config => {
-                createTextField(config);
-            });
-            canvas.renderAll();
-        }
-
-        // Загальна функція для створення текстового поля
-        function createTextField(config) {
-            const text = new fabric.IText(config.text, {
-                left: config.x,
-                top: config.y,
-                fontFamily: config.font,
-                fontSize: config.size,
-                fill: '#000000',
-                backgroundColor: '#ffffff', // Білий фон перекриває старий текст
-                
-                // Налаштування для точності
-                hasRotatingPoint: false,
-                lockRotation: true,
-                padding: 1,
-                cornerSize: 6,
-                cornerColor: '#007AFF',
-                
-                // Додаємо ID для ідентифікації
-                id: config.id
-            });
-            canvas.add(text);
-        }
-
-        // Додавання абсолютно нового поля вручну
-        function addNewField() {
-            createTextField({
-                text: 'Нове поле',
-                x: 100,
-                y: 100,
-                size: 12,
-                font: 'Arial'
-            });
-        }
-
-        // --- Взаємодія з панеллю налаштувань ---
-        const settingsPanel = document.getElementById('field-settings');
-        const setTextInput = document.getElementById('set-text');
-        const setSizeInput = document.getElementById('set-size');
-        const setColorInput = document.getElementById('set-color');
-        const setXInput = document.getElementById('set-x');
-        const setYInput = document.getElementById('set-y');
-
-        // Показуємо панель, коли вибрано текст
-        canvas.on('selection:created', showSettings);
-        canvas.on('selection:updated', showSettings);
-        canvas.on('selection:cleared', hideSettings);
-        
-        // Оновлюємо X/Y при перетягуванні
-        canvas.on('object:moving', showSettings);
-
-        function showSettings() {
-            const activeObject = canvas.getActiveObject();
-            if (activeObject && activeObject.type === 'i-text') {
-                settingsPanel.style.display = 'block';
-                
-                // Заповнюємо інпути поточними значеннями
-                setTextInput.value = activeObject.text;
-                setSizeInput.value = activeObject.fontSize;
-                setColorInput.value = activeObject.fill;
-                setXInput.value = Math.round(activeObject.left);
-                setYInput.value = Math.round(activeObject.top);
-            } else {
-                hideSettings();
-            }
-        }
-
-        function hideSettings() {
-            settingsPanel.style.display = 'none';
-        }
-
-        // Оновлюємо активне поле на основі значень інпутів
-        function updateActiveField(property) {
-            const activeObject = canvas.getActiveObject();
-            if (!activeObject || activeObject.type !== 'i-text') return;
-
-            switch(property) {
-                case 'text': activeObject.set('text', setTextInput.value); break;
-                case 'size': activeObject.set('fontSize', parseInt(setSizeInput.value, 10)); break;
-                case 'color': activeObject.set('fill', setColorInput.value); break;
-                case 'x': activeObject.set('left', parseInt(setXInput.value, 10)); break;
-                case 'y': activeObject.set('top', parseInt(setYInput.value, 10)); break;
-            }
-            canvas.renderAll();
-        }
-
-        function deleteActiveField() {
-            const activeObject = canvas.getActiveObject();
-            if (activeObject) {
-                canvas.remove(activeObject);
-                hideSettings();
-            }
-        }
-
-        // --- Збереження фінального зображення ---
-        function downloadImage() {
-            // Зберігаємо оригінальну роздільну здатність
-            const dataURL = canvas.toDataURL({
-                format: 'png',
-                quality: 1.0,
-                multiplier: 1 
-            });
-            const link = document.createElement('a');
-            link.download = 'edited_receipt.png';
-            link.href = dataURL;
-            link.click();
-        }
-
+        });
     </script>
 </body>
 </html>
