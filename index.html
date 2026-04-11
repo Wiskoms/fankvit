@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Bank Editor Transparent</title>
+    <title>Bank Editor - New Data</title>
     
     <style>
         @font-face { font-family: 'Manrope'; src: url('Manrope.ttf'); }
@@ -35,14 +35,12 @@
         .editable {
             position: absolute;
             border: none;
-            /* Зроблено прозорим */
             background: transparent; 
             outline: none;
             white-space: nowrap;
             display: inline-block;
             min-width: 5px;
             cursor: text;
-            /* Додано легку тінь, щоб текст не губився на строкатомі фоні */
             text-shadow: 0px 0px 1px rgba(255,255,255,0.5);
         }
 
@@ -54,28 +52,27 @@
 <body>
 
     <div id="wrapper">
-        <div id="receipt" class="receipt-container" spellcheck="false">
-            </div>
+        <div id="receipt" class="receipt-container" spellcheck="false"></div>
     </div>
 
     <script>
-        // Конфігурація: left, top, font-size (s), color (c), bold (b)
+        // Конфігурація з новими рандомними даними
         const fieldsConfig = [
-            { id: 'f1',  t: 'P24A5585215829D8130', left: 81.2, top: 19.5, s: 2.1, c: '#555', b: false },
-            { id: 'f2',  t: 'P24A5585215829D8130', left: 5.1,  top: 24.0, s: 2.1, c: '#555', b: false },
-            { id: 'f3',  t: 'ЯЩУК РОМАН МИКОЛАЙОВИЧ', left: 5.1,  top: 28.8, s: 2.7, c: '#000', b: false },
-            { id: 'f4',  t: '3962708533', left: 5.1,  top: 32.0, s: 2.5, c: '#000', b: false },
-            { id: 'f5',  t: 'UA463052990262096400990356871', left: 5.1, top: 34.5, s: 2.3, c: '#000', b: false },
-            { id: 'f6',  t: 'АТ КБ ПРИВАТБАНК', left: 5.1, top: 37.0, s: 2.3, c: '#000', b: false },
-            { id: 'f7',  t: 'UA232441015262947', left: 52.0, top: 34.5, s: 2.3, c: '#000', b: false },
-            { id: 'f8',  t: 'PJSC BANK ALLIANCE', left: 52.0, top: 37.0, s: 2.3, c: '#000', b: false },
-            { id: 'f9',  t: 'Переказ власних коштів.', left: 5.1, top: 42.0, s: 2.5, c: '#000', b: false },
-            { id: 'f10', t: '5,00', left: 68.5, top: 42.0, s: 2.5, c: '#000', b: false },
-            { id: 'f11', t: '320,00', left: 92.2, top: 42.0, s: 2.7, c: '#000', b: false },
-            { id: 'f12', t: 'триста двадцять грн. 00 коп.', left: 80.5, top: 44.5, s: 2.0, c: '#000', b: false },
-            { id: 'f13', t: '2026/04/04 21:58   Ящук Роман Миколайович', left: 4.6, top: 73.5, s: 2.0, c: '#333', b: false },
-            { id: 'f14', t: '04/04/2026 21:58', left: 87.2, top: 72.2, s: 2.0, c: '#333', b: false },
-            { id: 'f15', t: '04/03/2026', left: 89.5, top: 74.8, s: 2.0, c: '#333', b: false }
+            { id: 'f1',  t: 'P24A8821940537B1024', left: 81.2, top: 19.5, s: 2.1, c: '#555', b: false },
+            { id: 'f2',  t: 'P24A8821940537B1024', left: 5.1,  top: 24.0, s: 2.1, c: '#555', b: false },
+            { id: 'f3',  t: 'МАРТИНЮК ОЛЕКСІЙ ВАСИЛЬОВИЧ', left: 5.1,  top: 28.8, s: 1.5, c: '#000', b: false },
+            { id: 'f4',  t: '4029381755', left: 5.1,  top: 32.0, s: 1.5, c: '#000', b: false },
+            { id: 'f5',  t: 'UA123456789012345678901234567', left: 5.1, top: 34.5, s: 1.5, c: '#000', b: false },
+            { id: 'f6',  t: 'АТ КБ МОНОБАНК', left: 5.1, top: 37.0, s: 1.5, c: '#000', b: false },
+            { id: 'f7',  t: 'UA98765432109876543', left: 52.0, top: 34.5, s: 1.5, c: '#000', b: false },
+            { id: 'f8',  t: 'PJSC OSCHADBANK', left: 52.0, top: 37.0, s: 1.5, c: '#000', b: false },
+            { id: 'f9',  t: 'Оплата послуг згідно договору.', left: 5.1, top: 42.0, s: 1.5, c: '#000', b: false },
+            { id: 'f10', t: '15,50', left: 68.5, top: 42.0, s: 1.5, c: '#000', b: false },
+            { id: 'f11', t: '1 450,00', left: 92.2, top: 42.0, s: 1.5, c: '#000', b: false },
+            { id: 'f12', t: 'одна тисяча чотириста п’ятдесят грн. 00 коп.', left: 80.5, top: 44.5, s: 1.3, c: '#000', b: false },
+            { id: 'f13', t: '2026/04/11 15:30   Мартинюк Олексій Васильович', left: 4.6, top: 73.5, s: 1.5, c: '#333', b: false },
+            { id: 'f14', t: '11/04/2026 15:30', left: 87.2, top: 72.2, s: 1.5, c: '#333', b: false },
+            { id: 'f15', t: '10/04/2026', left: 89.5, top: 74.8, s: 1.5, c: '#333', b: false }
         ];
 
         const container = document.getElementById('receipt');
@@ -97,20 +94,11 @@
                 el.id = conf.id;
                 el.className = 'editable' + (conf.b ? ' bold' : '');
                 el.contentEditable = "true";
-                
                 el.style.top = conf.top + '%';
-                
-                if (conf.rightAlign) {
-                    el.style.right = (100 - conf.left) + '%';
-                    el.style.textAlign = 'right';
-                } else {
-                    el.style.left = conf.left + '%';
-                }
-
+                el.style.left = conf.left + '%';
                 el.style.fontSize = conf.s + 'vw';
                 el.style.color = conf.c;
                 el.innerText = conf.t;
-
                 el.addEventListener('input', saveData);
                 container.appendChild(el);
             });
@@ -121,12 +109,14 @@
             document.querySelectorAll('.editable').forEach(el => {
                 data[el.id] = el.innerText;
             });
-            localStorage.setItem('receipt_save_v2', JSON.stringify(data));
+            // Змінено ключ на v3 для примусового оновлення
+            localStorage.setItem('receipt_save_v3', JSON.stringify(data));
         }
 
         function loadData() {
             renderFields();
-            const saved = localStorage.getItem('receipt_save_v2');
+            // Змінено ключ на v3
+            const saved = localStorage.getItem('receipt_save_v3');
             if (saved) {
                 const data = JSON.parse(saved);
                 for (let id in data) {
