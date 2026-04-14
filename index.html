@@ -3,23 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Bank Editor - Drag & Drop Mode</title>
+    <title>Bank Editor Final</title>
     
     <style>
         @font-face { font-family: 'Manrope'; src: url('Manrope.ttf'); }
-        @font-face { font-family: 'Manrope-Bold'; src: url('Manrope-Bold.ttf'); }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             background-color: #000; overflow: hidden;
             font-family: 'Manrope', sans-serif;
-            user-select: none; /* Щоб текст не виділявся при перетягуванні */
         }
 
         #wrapper {
             width: 100vw; height: 100vh;
             overflow-y: auto; display: flex;
             justify-content: center; background-color: #1a1a1a;
+            -webkit-overflow-scrolling: touch;
         }
 
         .receipt-container {
@@ -31,122 +30,106 @@
 
         .editable {
             position: absolute;
-            background: rgba(255, 255, 255, 0.1); /* Легкий фон, щоб бачити межі при русі */
-            outline: 1px dashed #5cc033;
+            background: transparent; 
+            outline: none;
             white-space: nowrap;
             display: inline-block;
-            cursor: move;
-            text-shadow: 0.2px 0.2px 0px rgba(255,255,255,0.2);
+            min-width: 5px;
+            cursor: text;
+            color: #000; /* Чорний колір для всього тексту */
+            font-weight: normal; /* Тонкий шрифт */
+            text-shadow: 0.1px 0.1px 0px rgba(255,255,255,0.1);
         }
 
-        .bold { font-family: 'Manrope-Bold', sans-serif; }
-
-        /* Панель координат */
-        #debug-panel {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: rgba(0,0,0,0.8); color: #0f0;
-            padding: 10px; font-family: monospace; font-size: 12px;
-            z-index: 9999; border-top: 1px solid #5cc033;
-            pointer-events: none;
-        }
+        * { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
 <body>
 
     <div id="wrapper">
-        <div id="receipt" class="receipt-container"></div>
+        <div id="receipt" class="receipt-container" spellcheck="false"></div>
     </div>
 
-    <div id="debug-panel">Виберіть поле для редагування...</div>
-
     <script>
+        // Встав сюди свої вивірені координати (left та top)
         const fieldsConfig = [
-            { id: 'f1',  t: 'P24A9910442750C2031', left: 78.2, top: 16.94, s: 1.5, c: '#000', b: false },
-            { id: 'f2',  t: 'P24A9910442750C2031', left: 3.9,  top: 23.0, s: 1.5, c: '#6a6a6a', b: false },
-            { id: 'f3',  t: 'КОВАЛЕНКО ДМИТРО ІГОРОВИЧ', left: 3.9,  top: 28.6, s: 1.5, c: '#000', b: false },
-            { id: 'f4',  t: '3821094756', left: 3.9,  top: 32.0, s: 1.5, c: '#6a6a6a', b: false },
-            { id: 'f5',  t: 'UA553226690000026004558210344', left: 3.95, top: 34.6, s: 1.4, c: '#6a6a6a', b: false },
-            { id: 'f6',  t: 'АТ КБ ПРИВАТБАНК', left: 4.0, top: 36.75, s: 1.4, c: '#6a6a6a', b: false },
-            { id: 'f7',  t: 'UA113005280000026209947103255', left: 52.0, top: 34.5, s: 1.4, c: '#6a6a6a', b: false },
-            { id: 'f8',  t: 'АТ РАЙФФАЙЗЕН БАНК', left: 52.0, top: 37.0, s: 1.4, c: '#6a6a6a', b: false },
-            { id: 'f9',  t: 'Поповнення рахунку.', left: 3.9, top: 41.7, s: 1.5, c: '#6a6a6a', b: false },
-            { id: 'f10', t: '2,00', left: 68.5, top: 42.0, s: 1.5, c: '#6a6a6a', b: false },
-            { id: 'f11', t: '560,00', left: 92.2, top: 42.0, s: 1.6, c: '#000', b: false },
-            { id: 'f12', t: 'п’ятсот шістдесят грн. 00 коп.', left: 80.5, top: 44.5, s: 1.3, c: '#6a6a6a', b: false },
-            { id: 'f13', t: '2026/04/11 16:45   Коваленко Дмитро Ігорович', left: 4.6, top: 73.5, s: 1.15, c: '#6a6a6a', b: false },
-            { id: 'f14', t: '11/04/2026 16:45', left: 87.2, top: 72.2, s: 1.15, c: '#6a6a6a', b: false },
-            { id: 'f15', t: '11/04/2026', left: 89.5, top: 74.8, s: 1.15, c: '#6a6a6a', b: false }
+            { id: 'f1',  t: 'P24A9910442750C2031', left: 78.2, top: 16.94, s: 1.4 },
+            { id: 'f2',  t: 'P24A9910442750C2031', left: 3.97,  top: 23.84,  s: 1.4 },
+            { id: 'f3',  t: 'КОВАЛЕНКО ДМИТРО ІГОРОВИЧ', left: 3.97,  top: 28.54,  s: 1.4 },
+            { id: 'f18',  t: 'КОВАЛЕНКО ДМИТРО ІГОРОВИЧ', left: 51.6,  top: 28.54,  s: 1.4 },
+            { id: 'f4',  t: '3821094756', left: 3.97,  top: 31.64,  s: 1.4 },
+            { id: 'f17',  t: '3821094756', left: 51.6,  top: 31.64,  s: 1.4 },
+            { id: 'f5',  t: 'UA553226690000026004558210344', left: 3.97, top: 34.2, s: 1.4 },
+            { id: 'f6',  t: 'АТ КБ ПРИВАТБАНК', left: 3.97 , top: 36.72, s: 1.4 },
+            { id: 'f7',  t: 'UA113005280000026209947103255', left: 51.6, top: 34.2, s: 1.4 },
+            { id: 'f8',  t: 'АТ РАЙФФАЙЗЕН БАНК', left: 51.6, top: 36.72, s: 1.4 },
+            { id: 'f9',  t: 'Поповнення рахунку.', left: 3.97, top: 41.7, s: 1.4 },
+            { id: 'f10', t: '2,00', left: 67.65, top: 41.73, s: 1.5 },
+            { id: 'f11', t: '560,00', left: 90.89, top: 41.73, s: 1.5 },
+            { id: 'f12', t: 'п’ятсот шістдесят грн. 00 коп.', left: 78.53, top: 44.35, s: 1.3 },
+            { id: 'f13', t: '2026/04/14 16:45   Коваленко Дмитро Ігорович', left: 3.97, top: 72.96, s: 1.15 },
+            { id: 'f14', t: '14/04/2026 16:45', left: 85.89, top: 71.87, s: 1.15 },
+            { id: 'f16', t: '14/04/2026 16:45', left: 85.89, top: 72.95, s: 1.15 },
+            { id: 'f15', t: '14/04/2026', left: 89.17, top: 74.02, s: 1.15 }
         ];
 
         const container = document.getElementById('receipt');
-        const debugPanel = document.getElementById('debug-panel');
-        let activeEl = null;
 
         function init() {
             const img = new Image();
             img.src = 'receipt.jpg';
             img.onload = function() {
-                container.style.height = (window.innerWidth * (img.height / img.width)) + 'px';
+                const ratio = img.height / img.width;
+                container.style.height = (window.innerWidth * ratio) + 'px';
                 container.style.backgroundImage = "url('receipt.jpg')";
-                renderFields();
+                loadData();
             };
         }
 
         function renderFields() {
             fieldsConfig.forEach(conf => {
                 const el = document.createElement('div');
-                el.className = 'editable' + (conf.b ? ' bold' : '');
-                el.innerText = conf.t;
-                el.style.left = conf.left + '%';
+                el.id = conf.id;
+                el.className = 'editable';
+                el.contentEditable = "true";
                 el.style.top = conf.top + '%';
+                
+                if (conf.rightAlign) {
+                    el.style.right = (100 - conf.left) + '%';
+                    el.style.textAlign = 'right';
+                } else {
+                    el.style.left = conf.left + '%';
+                }
+
                 el.style.fontSize = conf.s + 'vw';
-                el.style.color = conf.c;
-
-                // Логіка перетягування
-                el.onmousedown = (e) => startDrag(e, el, conf.id);
-                el.ontouchstart = (e) => startDrag(e, el, conf.id);
-
+                el.innerText = conf.t;
+                el.addEventListener('input', saveData);
                 container.appendChild(el);
             });
         }
 
-        function startDrag(e, el, id) {
-            activeEl = el;
-            let startX = e.pageX || e.touches[0].pageX;
-            let startY = e.pageY || e.touches[0].pageY;
-            let initialLeft = parseFloat(el.style.left);
-            let initialTop = parseFloat(el.style.top);
-
-            const onMove = (moveEvent) => {
-                let curX = moveEvent.pageX || (moveEvent.touches ? moveEvent.touches[0].pageX : moveEvent.pageX);
-                let curY = moveEvent.pageY || (moveEvent.touches ? moveEvent.touches[0].pageY : moveEvent.pageY);
-
-                let diffX = ((curX - startX) / container.offsetWidth) * 100;
-                let diffY = ((curY - startY) / container.offsetHeight) * 100;
-
-                let newLeft = (initialLeft + diffX).toFixed(2);
-                let newTop = (initialTop + diffY).toFixed(2);
-
-                el.style.left = newLeft + '%';
-                el.style.top = newTop + '%';
-
-                debugPanel.innerHTML = `ID: <b>${id}</b> | left: <b>${newLeft}</b> | top: <b>${newTop}</b> | s: <b>${parseFloat(el.style.fontSize)}</b>`;
-            };
-
-            const onEnd = () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onEnd);
-                document.removeEventListener('touchmove', onMove);
-                document.removeEventListener('touchend', onEnd);
-            };
-
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onEnd);
-            document.addEventListener('touchmove', onMove);
-            document.addEventListener('touchend', onEnd);
+        function saveData() {
+            const data = {};
+            document.querySelectorAll('.editable').forEach(el => {
+                data[el.id] = el.innerText;
+            });
+            localStorage.setItem('receipt_final_save', JSON.stringify(data));
         }
 
-        window.onload = init;
+        function loadData() {
+            renderFields();
+            const saved = localStorage.getItem('receipt_final_save');
+            if (saved) {
+                const data = JSON.parse(saved);
+                for (let id in data) {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = data[id];
+                }
+            }
+        }
+
+        window.addEventListener('load', init);
+        window.oncontextmenu = (e) => { e.preventDefault(); return false; };
     </script>
 </body>
 </html>
