@@ -3,73 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Bank Editor">
-    
-    <link rel="apple-touch-icon" href="icon.png">
-
-    <title>Bank Editor Final</title>
-    
+    <title>Bank Editor</title>
     <style>
         @font-face { font-family: 'Manrope'; src: url('Manrope.ttf'); }
-
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #000; overflow: hidden;
-            font-family: 'Manrope', sans-serif;
-            /* Запобігає випадковим рухам сторінки в режимі додатка */
-            position: fixed; 
-            touch-action: none;
-        }
-
-        #wrapper {
-            width: 100vw; height: 100vh;
-            overflow: hidden; /* Вимикаємо прокрутку всього екрана */
-            display: flex;
-            justify-content: center; background-color: #1a1a1a;
-        }
-
-        .receipt-container {
-            position: relative;
-            background-size: 100% 100%;
-            background-repeat: no-repeat;
-            width: 100%;
-            /* Дозволяємо прокрутку тільки самої квитанції, якщо вона не влізає */
-            overflow-y: auto;
-        }
-
-        .editable {
-            position: absolute;
-            background: transparent; 
-            outline: none;
-            white-space: nowrap;
-            display: inline-block;
-            min-width: 5px;
-            cursor: text;
-            color: #000;
-            font-weight: normal;
-            text-shadow: 0.1px 0.1px 0px rgba(255,255,255,0.1);
-        }
-
-        * { -webkit-tap-highlight-color: transparent; }
+        @font-face { font-family: 'Manrope-Bold'; src: url('Manrope-Bold.ttf'); }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; font-family: 'Manrope', sans-serif; position: fixed; touch-action: none; }
+        #wrapper { width: 100vw; height: 100vh; display: flex; justify-content: center; background-color: #1a1a1a; overflow: hidden; }
+        .receipt-container { position: relative; background-size: 100% 100%; background-repeat: no-repeat; width: 100%; overflow-y: auto; }
+        .editable { position: absolute; background: transparent; outline: none; white-space: nowrap; display: inline-block; color: #000; text-shadow: 0.1px 0.1px 0px rgba(255,255,255,0.1); }
+        .bold { font-family: 'Manrope-Bold', sans-serif !important; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div id="wrapper">
         <div id="receipt" class="receipt-container" spellcheck="false"></div>
     </div>
-
     <script>
         const fieldsConfig = [
-            { id: 'f1',  t: 'P24A9910442750C2031', left: 78.2, top: 16.95, s: 1.4 rightAlign: true },
+            { id: 'f1',  t: 'P24A9910442750C2031', left: 78.2, top: 16.95, s: 1.4, rightAlign: true, b: true },
             { id: 'f2',  t: 'P24A9910442750C2031', left: 3.97,  top: 23.84,  s: 1.4 },
             { id: 'f3',  t: 'КОВАЛЕНКО ДМИТРО ІГОРОВИЧ', left: 3.97,  top: 28.54,  s: 1.4 },
-            { id: 'f18',  t: 'КОВАЛЕНКО ДМИТРО ІГОРОВИЧ', left: 51.6,  top: 28.54,  s: 1.4 },
+            { id: 'f18', t: 'КОВАЛЕНКО ДМИТРО ІГОРОВИЧ', left: 51.6,  top: 28.54,  s: 1.4 },
             { id: 'f4',  t: '3821094756', left: 3.97,  top: 31.64,  s: 1.4 },
-            { id: 'f17',  t: '3821094756', left: 51.6,  top: 31.64,  s: 1.4 },
+            { id: 'f17', t: '3821094756', left: 51.6,  top: 31.64,  s: 1.4 },
             { id: 'f5',  t: 'UA553226690000026004558210344', left: 3.97, top: 34.2, s: 1.4 },
             { id: 'f6',  t: 'АТ КБ ПРИВАТБАНК', left: 3.97 , top: 36.72, s: 1.4 },
             { id: 'f7',  t: 'UA113005280000026209947103255', left: 51.6, top: 34.2, s: 1.4 },
@@ -90,57 +48,45 @@
             const img = new Image();
             img.src = 'receipt.jpg';
             img.onload = function() {
-                const ratio = img.height / img.width;
-                container.style.height = (window.innerWidth * ratio) + 'px';
+                container.style.height = (window.innerWidth * (img.height / img.width)) + 'px';
                 container.style.backgroundImage = "url('receipt.jpg')";
-                loadData();
+                renderFields();
+                loadSaved();
             };
+            img.onerror = function() { alert("Помилка: Файл receipt.jpg не знайдено!"); };
         }
 
         function renderFields() {
             fieldsConfig.forEach(conf => {
                 const el = document.createElement('div');
                 el.id = conf.id;
-                el.className = 'editable';
+                el.className = 'editable' + (conf.b ? ' bold' : '');
                 el.contentEditable = "true";
                 el.style.top = conf.top + '%';
-                
-                if (conf.rightAlign) {
-                    el.style.right = (100 - conf.left) + '%';
-                    el.style.textAlign = 'right';
-                } else {
-                    el.style.left = conf.left + '%';
-                }
-
+                if (conf.rightAlign) { el.style.right = (100 - conf.left) + '%'; el.style.textAlign = 'right'; }
+                else { el.style.left = conf.left + '%'; }
                 el.style.fontSize = conf.s + 'vw';
                 el.innerText = conf.t;
-                el.addEventListener('input', saveData);
+                el.oninput = saveAll;
                 container.appendChild(el);
             });
         }
 
-        function saveData() {
+        function saveAll() {
             const data = {};
-            document.querySelectorAll('.editable').forEach(el => {
-                data[el.id] = el.innerText;
-            });
-            localStorage.setItem('receipt_final_save', JSON.stringify(data));
+            document.querySelectorAll('.editable').forEach(el => data[el.id] = el.innerText);
+            localStorage.setItem('receipt_final_v10', JSON.stringify(data));
         }
 
-        function loadData() {
-            renderFields();
-            const saved = localStorage.getItem('receipt_final_save');
+        function loadSaved() {
+            const saved = localStorage.getItem('receipt_final_v10');
             if (saved) {
                 const data = JSON.parse(saved);
-                for (let id in data) {
-                    const el = document.getElementById(id);
-                    if (el) el.innerText = data[id];
-                }
+                for (let id in data) { if (document.getElementById(id)) document.getElementById(id).innerText = data[id]; }
             }
         }
 
-        window.addEventListener('load', init);
-        window.oncontextmenu = (e) => { e.preventDefault(); return false; };
+        window.onload = init;
     </script>
 </body>
 </html>
