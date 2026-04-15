@@ -3,19 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Bank Editor Pure Bold</title>
+    <title>Bank Editor Precision Bold</title>
     
     <style>
         @font-face { 
             font-family: 'Manrope'; 
             src: url('Manrope.ttf'); 
-            font-weight: 400;
-        }
-        /* Обов'язково переконайся, що файл Manrope-Bold.ttf є в папці */
-        @font-face { 
-            font-family: 'Manrope'; 
-            src: url('Manrope-Bold.ttf'); 
-            font-weight: 700;
         }
 
         body, html {
@@ -47,11 +40,13 @@
             display: inline-block;
             color: #000;
             
-            /* ЧИСТА ЖИРНІСТЬ */
+            /* --- НАЛАШТУВАННЯ ТОЧНОЇ ЖИРНОСТІ --- */
             font-weight: 500; 
-            letter-spacing: -0.01em; /* Покращує читабельність жирного тексту */
+            /* Додаємо тонкий контур навколо кожної літери */
+            -webkit-text-stroke: 0.4px #000; 
+            /* Покращуємо рендеринг */
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            letter-spacing: -0.01em;
         }
 
         * { -webkit-tap-highlight-color: transparent; }
@@ -121,11 +116,11 @@
         function saveAll() {
             const data = {};
             document.querySelectorAll('.editable').forEach(el => data[el.id] = el.innerText);
-            localStorage.setItem('receipt_pure_bold', JSON.stringify(data));
+            localStorage.setItem('receipt_precision_bold', JSON.stringify(data));
         }
 
         function loadSaved() {
-            const saved = localStorage.getItem('receipt_pure_bold');
+            const saved = localStorage.getItem('receipt_precision_bold');
             if (saved) {
                 const data = JSON.parse(saved);
                 for (let id in data) { 
