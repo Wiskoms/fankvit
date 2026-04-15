@@ -3,39 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Bank Editor">
-
-    <title>Bank Editor Final Bold</title>
+    <title>Bank Editor Pure Bold</title>
     
     <style>
         @font-face { 
             font-family: 'Manrope'; 
             src: url('Manrope.ttf'); 
-            font-weight: normal;
+            font-weight: 400;
         }
-        /* Якщо у тебе є окремий файл Manrope-Bold.ttf, він підтягнеться тут. 
-           Якщо ні — браузер зробить шрифт жирним програмно. */
+        /* Обов'язково переконайся, що файл Manrope-Bold.ttf є в папці */
         @font-face { 
             font-family: 'Manrope'; 
             src: url('Manrope-Bold.ttf'); 
-            font-weight: bold;
+            font-weight: 700;
         }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             background-color: #000;
             font-family: 'Manrope', sans-serif;
-            overflow-x: hidden; 
+            overflow-x: hidden;
         }
 
         #wrapper {
             width: 100vw; min-height: 100vh;
             display: flex; justify-content: center;
             background-color: #1a1a1a; overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
         }
 
         .receipt-container {
@@ -54,11 +47,11 @@
             display: inline-block;
             color: #000;
             
-            /* ПОВНА ЖИРНІСТЬ ДЛЯ ВСІХ ПОЛІВ */
-            font-weight: bold;
-            /* Додаткова мікро-тінь для насиченості кольору */
-            text-shadow: 0.15px 0px 0px #000; 
+            /* ЧИСТА ЖИРНІСТЬ */
+            font-weight: 700; 
+            letter-spacing: -0.01em; /* Покращує читабельність жирного тексту */
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         * { -webkit-tap-highlight-color: transparent; }
@@ -128,11 +121,11 @@
         function saveAll() {
             const data = {};
             document.querySelectorAll('.editable').forEach(el => data[el.id] = el.innerText);
-            localStorage.setItem('receipt_final_bold_v1', JSON.stringify(data));
+            localStorage.setItem('receipt_pure_bold', JSON.stringify(data));
         }
 
         function loadSaved() {
-            const saved = localStorage.getItem('receipt_final_bold_v1');
+            const saved = localStorage.getItem('receipt_pure_bold');
             if (saved) {
                 const data = JSON.parse(saved);
                 for (let id in data) { 
@@ -143,7 +136,6 @@
         }
 
         window.onload = init;
-        window.oncontextmenu = (e) => { e.preventDefault(); return false; };
     </script>
 </body>
 </html>
