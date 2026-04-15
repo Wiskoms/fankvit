@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-title" content="Bank Editor">
     <link rel="apple-touch-icon" href="icon.png">
 
-    <title>Bank Editor Soft Focus</title>
+    <title>Bank Editor - Clear Style</title>
     
     <style>
         @font-face { font-family: 'Manrope'; src: url('Manrope.ttf'); }
@@ -44,13 +44,15 @@
             display: inline-block;
             color: #000;
             
-            /* --- НАЛАШТУВАННЯ ЖИРНОСТІ --- */
+            /* ЖИРНІСТЬ ТА ЧІТКІСТЬ */
             font-weight: 400; 
             -webkit-text-stroke: 0.3px #000; 
             letter-spacing: -0.01em;
 
-            /* Також прибираємо зайву чіткість, щоб розмиття працювало краще */
-            -webkit-font-smoothing: auto; 
+            /* Вимикаємо розмиття та повертаємо стандартне згладжування */
+            filter: none;
+            -webkit-filter: none;
+            -webkit-font-smoothing: antialiased; 
         }
 
         * { -webkit-tap-highlight-color: transparent; }
@@ -120,11 +122,11 @@
         function saveAll() {
             const data = {};
             document.querySelectorAll('.editable').forEach(el => data[el.id] = el.innerText);
-            localStorage.setItem('receipt_soft_focus', JSON.stringify(data));
+            localStorage.setItem('receipt_clear_data', JSON.stringify(data));
         }
 
         function loadSaved() {
-            const saved = localStorage.getItem('receipt_soft_focus');
+            const saved = localStorage.getItem('receipt_clear_data');
             if (saved) {
                 const data = JSON.parse(saved);
                 for (let id in data) { 
