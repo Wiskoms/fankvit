@@ -3,28 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Developer Mode - Drag & Drop</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Bank Editor">
+
+    <title>Bank Editor Final Bold</title>
     
     <style>
-        @font-face { font-family: 'Manrope'; src: url('Manrope.ttf'); }
+        @font-face { 
+            font-family: 'Manrope'; 
+            src: url('Manrope.ttf'); 
+            font-weight: normal;
+        }
+        /* Якщо у тебе є окремий файл Manrope-Bold.ttf, він підтягнеться тут. 
+           Якщо ні — браузер зробить шрифт жирним програмно. */
+        @font-face { 
+            font-family: 'Manrope'; 
+            src: url('Manrope-Bold.ttf'); 
+            font-weight: bold;
+        }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #000; font-family: 'Manrope', sans-serif;
-        }
-
-        /* Панель розробника */
-        #debug-panel {
-            position: fixed; top: 0; left: 0; width: 100%;
-            background: rgba(0,0,0,0.9); color: #0f0;
-            padding: 10px; font-family: monospace; z-index: 10000;
-            font-size: 12px; border-bottom: 1px solid #0f0;
-            pointer-events: none;
+            background-color: #000;
+            font-family: 'Manrope', sans-serif;
+            overflow-x: hidden; 
         }
 
         #wrapper {
-            width: 100vw; display: flex; justify-content: center;
+            width: 100vw; min-height: 100vh;
+            display: flex; justify-content: center;
             background-color: #1a1a1a; overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .receipt-container {
@@ -32,28 +43,28 @@
             background-size: 100% 100%;
             background-repeat: no-repeat;
             width: 100%;
+            height: auto;
         }
 
         .editable {
             position: absolute;
-            background: rgba(255, 255, 0, 0.2); /* Підсвітка для зручності */
-            outline: 1px dashed orange;
+            background: transparent; 
+            outline: none;
             white-space: nowrap;
             display: inline-block;
-            cursor: move;
             color: #000;
-            touch-action: none; /* Важливо для Drag & Drop */
-        }
-
-        .medium {
-            text-shadow: 0.3px 0px 0px #000, -0.1px 0px 0px #000;
+            
+            /* ПОВНА ЖИРНІСТЬ ДЛЯ ВСІХ ПОЛІВ */
+            font-weight: bold;
+            /* Додаткова мікро-тінь для насиченості кольору */
+            text-shadow: 0.2px 0px 0px #000; 
             -webkit-font-smoothing: antialiased;
         }
+
+        * { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
 <body>
-
-    <div id="debug-panel">Рухай поле, щоб побачити координати...</div>
 
     <div id="wrapper">
         <div id="receipt" class="receipt-container" spellcheck="false"></div>
@@ -61,28 +72,27 @@
 
     <script>
         const fieldsConfig = [
-            { id: 'f1',  t: 'P24A9910442750C2031', left: 78.2, top: 16.95, s: 1.3, rightAlign: true, m: true },
-            { id: 'f2',  t: 'P24A9910442750C2031', left: 3.97,  top: 23.84,  s: 1.4 },
-            { id: 'f3',  t: 'КОВАЛЕНКО ДМИТРО ІГОРОВИЧ', left: 3.97,  top: 28.54,  s: 1.4, rightAlign: true, m: true },
-            { id: 'f18', t: 'КОВАЛЕНКО ДМИТРО ІГОРОВИЧ', left: 51.6,  top: 28.54,  s: 1.4 },
-            { id: 'f4',  t: '3821094756', left: 3.97,  top: 31.64,  s: 1.4 },
-            { id: 'f17', t: '3821094756', left: 51.6,  top: 31.64,  s: 1.4, rightAlign: true, m: true },
-            { id: 'f5',  t: 'UA553226690000026004558210344', left: 3.97, top: 34.2, s: 1.4 },
-            { id: 'f6',  t: 'АТ КБ ПРИВАТБАНК', left: 3.97 , top: 36.72, s: 1.4, rightAlign: true, m: true },
-            { id: 'f7',  t: 'UA113005280000026209947103255', left: 51.6, top: 34.2, s: 1.4 },
-            { id: 'f8',  t: 'АТ РАЙФФАЙЗЕН БАНК', left: 51.6, top: 36.72, s: 1.4, rightAlign: true, m: true },
-            { id: 'f9',  t: 'Поповнення рахунку.', left: 3.97, top: 41.7, s: 1.4 },
-            { id: 'f10', t: '2,00', left: 67.65, top: 41.73, s: 1.5 },
-            { id: 'f11', t: '560,00', left: 90.89, top: 41.73, s: 1.5, m: true },
+            { id: 'f1',  t: 'P24A9910442750C2031', left: 78.2, top: 16.95, s: 1.3, rightAlign: true },
+            { id: 'f2',  t: 'P24A9910442750C2031', left: 3.97,  top: 23.84,  s: 1.3 },
+            { id: 'f3',  t: 'КОВАЛЕНКО ДМИТРО ІГОРОВИЧ', left: 3.97,  top: 28.54,  s: 1.3 },
+            { id: 'f18', t: 'КОВАЛЕНКО ДМИТРО ІГОРОВИЧ', left: 51.6,  top: 28.54,  s: 1.3 },
+            { id: 'f4',  t: '3821094756', left: 3.97,  top: 31.64,  s: 1.3 },
+            { id: 'f17', t: '3821094756', left: 51.6,  top: 31.64,  s: 1.3 },
+            { id: 'f5',  t: 'UA553226690000026004558210344', left: 3.97, top: 34.2, s: 1.3 },
+            { id: 'f6',  t: 'АТ КБ ПРИВАТБАНК', left: 3.97 , top: 36.72, s: 1.3 },
+            { id: 'f7',  t: 'UA113005280000026209947103255', left: 51.6, top: 34.2, s: 1.3 },
+            { id: 'f8',  t: 'АТ РАЙФФАЙЗЕН БАНК', left: 51.6, top: 36.72, s: 1.3 },
+            { id: 'f9',  t: 'Поповнення рахунку.', left: 3.97, top: 41.7, s: 1.3 },
+            { id: 'f10', t: '2,00', left: 67.65, top: 41.73, s: 1.3 },
+            { id: 'f11', t: '560,00', left: 90.89, top: 41.73, s: 1.3 },
             { id: 'f12', t: 'п’ятсот шістдесят грн. 00 коп.', left: 78.53, top: 44.35, s: 1.3 },
-            { id: 'f13', t: '2026/04/14 16:45   Коваленко Дмитро Ігорович', left: 3.97, top: 72.96, s: 1.15 },
-            { id: 'f14', t: '14/04/2026 16:45', left: 85.89, top: 71.87, s: 1.15 },
-            { id: 'f16', t: '14/04/2026 16:45', left: 85.89, top: 72.95, s: 1.15 },
-            { id: 'f15', t: '14/04/2026', left: 89.17, top: 74.02, s: 1.15 }
+            { id: 'f13', t: '2026/04/14 16:45   Коваленко Дмитро Ігорович', left: 3.97, top: 72.96, s: 1.3 },
+            { id: 'f14', t: '14/04/2026 16:45', left: 85.89, top: 71.87, s: 1.3 },
+            { id: 'f16', t: '14/04/2026 16:45', left: 85.89, top: 72.95, s: 1.3 },
+            { id: 'f15', t: '14/04/2026', left: 89.17, top: 74.02, s: 1.3 }
         ];
 
         const container = document.getElementById('receipt');
-        const debugPanel = document.getElementById('debug-panel');
 
         function init() {
             const img = new Image();
@@ -91,6 +101,7 @@
                 container.style.height = (window.innerWidth * (img.height / img.width)) + 'px';
                 container.style.backgroundImage = "url('receipt.jpg')";
                 renderFields();
+                loadSaved();
             };
         }
 
@@ -98,54 +109,41 @@
             fieldsConfig.forEach(conf => {
                 const el = document.createElement('div');
                 el.id = conf.id;
-                el.className = 'editable' + (conf.m ? ' medium' : '');
+                el.className = 'editable';
+                el.contentEditable = "true";
                 el.style.top = conf.top + '%';
-                el.style.left = conf.left + '%';
+                if (conf.rightAlign) {
+                    el.style.right = (100 - conf.left) + '%';
+                    el.style.textAlign = 'right';
+                } else {
+                    el.style.left = conf.left + '%';
+                }
                 el.style.fontSize = conf.s + 'vw';
                 el.innerText = conf.t;
-                
-                makeDraggable(el);
+                el.oninput = saveAll;
                 container.appendChild(el);
             });
         }
 
-        function makeDraggable(el) {
-            let isDragging = false;
+        function saveAll() {
+            const data = {};
+            document.querySelectorAll('.editable').forEach(el => data[el.id] = el.innerText);
+            localStorage.setItem('receipt_final_bold_v1', JSON.stringify(data));
+        }
 
-            const start = (e) => {
-                isDragging = true;
-                el.style.background = "rgba(255, 0, 0, 0.3)";
-            };
-
-            const move = (e) => {
-                if (!isDragging) return;
-                const rect = container.getBoundingClientRect();
-                const touch = e.touches ? e.touches[0] : e;
-                
-                let x = ((touch.clientX - rect.left) / rect.width) * 100;
-                let y = ((touch.clientY - rect.top) / rect.height) * 100;
-
-                el.style.left = x.toFixed(2) + '%';
-                el.style.top = y.toFixed(2) + '%';
-
-                debugPanel.innerText = `ID: ${el.id} | left: ${x.toFixed(2)}, top: ${y.toFixed(2)}`;
-            };
-
-            const stop = () => {
-                isDragging = false;
-                el.style.background = "rgba(255, 255, 0, 0.2)";
-            };
-
-            el.addEventListener('mousedown', start);
-            window.addEventListener('mousemove', move);
-            window.addEventListener('mouseup', stop);
-
-            el.addEventListener('touchstart', start);
-            window.addEventListener('touchmove', move);
-            window.addEventListener('touchend', stop);
+        function loadSaved() {
+            const saved = localStorage.getItem('receipt_final_bold_v1');
+            if (saved) {
+                const data = JSON.parse(saved);
+                for (let id in data) { 
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = data[id]; 
+                }
+            }
         }
 
         window.onload = init;
+        window.oncontextmenu = (e) => { e.preventDefault(); return false; };
     </script>
 </body>
 </html>
