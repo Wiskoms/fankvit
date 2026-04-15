@@ -3,25 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Bank Editor Precision Bold</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Bank Editor">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <title>Bank Editor Soft Focus</title>
     
     <style>
-        @font-face { 
-            font-family: 'Manrope'; 
-            src: url('Manrope.ttf'); 
-        }
+        @font-face { font-family: 'Manrope'; src: url('Manrope.ttf'); }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             background-color: #000;
             font-family: 'Manrope', sans-serif;
-            overflow-x: hidden;
+            overflow-x: hidden; 
         }
 
         #wrapper {
             width: 100vw; min-height: 100vh;
             display: flex; justify-content: center;
             background-color: #1a1a1a; overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .receipt-container {
@@ -40,13 +44,19 @@
             display: inline-block;
             color: #000;
             
-            /* --- НАЛАШТУВАННЯ ТОЧНОЇ ЖИРНОСТІ --- */
+            /* --- НАЛАШТУВАННЯ ЖИРНОСТІ --- */
             font-weight: 400; 
-            /* Додаємо тонкий контур навколо кожної літери */
-            -webkit-text-stroke: 0.45px #000; 
-            /* Покращуємо рендеринг */
-            -webkit-font-smoothing: antialiased;
+            -webkit-text-stroke: 0.3px #000; 
             letter-spacing: -0.01em;
+
+            /* --- ЕФЕКТ М'ЯКОГО РОЗМИТТЯ (SOFT FOCUS) --- */
+            /* Якщо текст занадто розмитий - зміни 0.25px на 0.15px */
+            /* Якщо недостатньо - зміни 0.25px на 0.35px */
+            filter: blur(0.25px);
+            -webkit-filter: blur(0.25px); /* Для Safari */
+
+            /* Також прибираємо зайву чіткість, щоб розмиття працювало краще */
+            -webkit-font-smoothing: auto; 
         }
 
         * { -webkit-tap-highlight-color: transparent; }
@@ -60,7 +70,7 @@
 
     <script>
         const fieldsConfig = [
-            { id: 'f1',  t: 'P24A9910442750C2031', left: 78.2, top: 16.95, s: 1.3 },
+            { id: 'f1',  t: 'P24A9910442750C2031', left: 78.2, top: 16.95, s: 1.3, rightAlign: true },
             { id: 'f2',  t: 'P24A9910442750C2031', left: 3.97,  top: 23.84,  s: 1.3 },
             { id: 'f3',  t: 'КОВАЛЕНКО ДМИТРО ІГОРОВИЧ', left: 3.97,  top: 28.54,  s: 1.3 },
             { id: 'f18', t: 'КОВАЛЕНКО ДМИТРО ІГОРОВИЧ', left: 51.6,  top: 28.54,  s: 1.3 },
@@ -74,10 +84,10 @@
             { id: 'f10', t: '2,00', left: 67.65, top: 41.73, s: 1.3 },
             { id: 'f11', t: '560,00', left: 90.89, top: 41.73, s: 1.3 },
             { id: 'f12', t: 'п’ятсот шістдесят грн. 00 коп.', left: 78.53, top: 44.35, s: 1.3 },
-            { id: 'f13', t: '2026/04/14 16:45   Коваленко Дмитро Ігорович', left: 3.97, top: 72.96, s: 1.3 },
-            { id: 'f14', t: '14/04/2026 16:45', left: 85.89, top: 71.87, s: 1.3 },
-            { id: 'f16', t: '14/04/2026 16:45', left: 85.89, top: 72.95, s: 1.3 },
-            { id: 'f15', t: '14/04/2026', left: 89.17, top: 74.02, s: 1.3 }
+            { id: 'f13', t: '2026/04/14 16:45   Коваленко Дмитро Ігорович', left: 3.97, top: 72.96, s: 1.15 },
+            { id: 'f14', t: '14/04/2026 16:45', left: 85.89, top: 71.87, s: 1.15 },
+            { id: 'f16', t: '14/04/2026 16:45', left: 85.89, top: 72.95, s: 1.15 },
+            { id: 'f15', t: '14/04/2026', left: 89.17, top: 74.02, s: 1.15 }
         ];
 
         const container = document.getElementById('receipt');
@@ -116,11 +126,11 @@
         function saveAll() {
             const data = {};
             document.querySelectorAll('.editable').forEach(el => data[el.id] = el.innerText);
-            localStorage.setItem('receipt_precision_bold', JSON.stringify(data));
+            localStorage.setItem('receipt_soft_focus', JSON.stringify(data));
         }
 
         function loadSaved() {
-            const saved = localStorage.getItem('receipt_precision_bold');
+            const saved = localStorage.getItem('receipt_soft_focus');
             if (saved) {
                 const data = JSON.parse(saved);
                 for (let id in data) { 
@@ -131,6 +141,7 @@
         }
 
         window.onload = init;
+        window.oncontextmenu = (e) => { e.preventDefault(); return false; };
     </script>
 </body>
 </html>
