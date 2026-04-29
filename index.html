@@ -50,9 +50,10 @@
             filter: none;
             -webkit-font-smoothing: antialiased; 
             
+            /* Гарантуємо, що поле не зникне при видаленні тексту */
             min-width: 20px;
             min-height: 1.2em;
-            -webkit-user-select: text; /* Дозволяємо виділення для редагування */
+            -webkit-user-select: text;
         }
 
         .grow-left {
@@ -70,7 +71,7 @@
     </div>
 
     <script>
-        // --- БЛОК ПАМ'ЯТІ КОРИСТУВАЧА ---
+        // --- БЛОК ПАМ'ЯТІ ---
         let userID = localStorage.getItem('bank_editor_user');
         if (!userID) {
             userID = prompt("Введіть ваше ім'я (для збереження даних):", "Максим");
@@ -127,11 +128,20 @@
                 el.style.color = fieldColor;
                 el.style.webkitTextStroke = `0.3px ${fieldColor}`;
 
+                // Збереження даних при вводі
                 el.oninput = saveAll;
 
+                // ВИПРАВЛЕННЯ: Очищення форматування при вставці
+                el.onpaste = function(e) {
+                    e.preventDefault();
+                    const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+                    document.execCommand("insertHTML", false, text);
+                };
+
+                // ВИПРАВЛЕННЯ: Захист від повного зникнення поля
                 el.onblur = function() {
                     if (this.innerText.trim() === "") {
-                        this.innerHTML = "&nbsp;";
+                        this.innerHTML = "&nbsp;"; 
                         saveAll();
                     }
                 };
@@ -158,7 +168,7 @@
         }
 
         window.onload = init;
-        // Заборона контекстного меню для більшої схожості з додатком
+        // Заборона контекстного меню
         window.oncontextmenu = (e) => { e.preventDefault(); return false; };
     </script>
 </body>
